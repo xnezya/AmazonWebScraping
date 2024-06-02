@@ -14,26 +14,22 @@ response = requests.get(product_url, headers=headers)
 soup = BeautifulSoup(response.content, 'html.parser')
 
 product_name = soup.find("span", attrs={"id": 'productTitle'}).text.strip()
-product_price = soup.find("span", attrs={"class": 'a-price aok-align-center reinventPricePriceToPayMargin priceToPay'}).text.strip()
+
+product_price_elem = soup.find("span", attrs={"class": 'a-price aok-align-center reinventPricePriceToPayMargin priceToPay'})
+if product_price_elem:
+    product_price = product_price_elem.text.strip()
+else:
+    product_price = "Fiyat bilgisi bulunamadı."
+
 product_star = soup.find("a", attrs={"class": 'a-popover-trigger a-declarative'}).find("span", attrs={"class": 'a-size-base a-color-base'}).text.strip()
+
 product_review = soup.find("span", attrs={"id": 'acrCustomerReviewText'}).text.strip()
 
-def get_info(product_url):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    }
-    response = requests.get(product_url, headers=headers)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    print(f"{product_name}")
-    return "Ürün adı:", product_name,"Ürün fiyatı:", product_price,"Ürün 5 Üzerinden Puanı:", product_star,"Ürünün değerlendirme sayısı:", product_review
+def get_product_info(product_url):
+    return product_name, product_price, product_star, product_review
 
-    
 def check_price(product_url):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    }
-    response = requests.get(product_url, headers=headers)
-    soup = BeautifulSoup(response.content, 'html.parser')
+    return product_price, product_price_elem 
 
     header = ['Title','Price','Date']
     today = datetime.date.today()
@@ -45,16 +41,10 @@ def check_price(product_url):
     
     df = pd.read_csv(r'D:\School\fourth year second semester\Web Mining\Web Mining Project\AmazonWebScraperDataset.csv')
     print(df)
-    
 
-def discount_alert(product_url, threshold):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    }
-    response = requests.get(product_url, headers=headers)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    
-    current_price_str = product_price.replace('₺', '').replace(',', '').replace('TL', '').strip()  # '₺' sembolünü, virgülü ve 'TL' metnini kaldırın
+
+def discount_alert(product_url, product_price_elem, threshold):
+    current_price_str = product_price.replace('₺', '').replace(',', '').replace('TL', '').strip()
     current_price = float(current_price_str)
 
     # İndirim kontrolü
@@ -97,8 +87,8 @@ def send_mail():
     server.quit()
 
     print("E-posta gönderildi!")
-    
-def compare_product(product_url):
+
+def compare_product(product_url,product_price):
     compare_product_url = 'https://www.trendyol.com/kahve-dunyasi/gofrik-sutlu-24-lu-p-3674870'
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
@@ -117,9 +107,10 @@ def compare_product(product_url):
     else:
         print(f"{compare_product_name} daha UCUZ. Fiyatı: {compare_product_price} TL")
         print(f"{product_name} daha PAHALI. Fiyatı: {product_price} TL")
-
-    
+        
 def menu():
+    product_price = None  # Başlangıçta product_price değerini None
+    product_price_tag = None  # product_price_tag'i None olarak tanımlayın
     while True:
         print("\nAna Menü:")
         print("1. Ürün Bilgisi Al")
@@ -131,20 +122,28 @@ def menu():
         choice = input("Lütfen bir seçenek seçin: ")
 
         if choice == "1":
-            get_info(product_url)
+            product_name, product_price, product_star, product_review = get_product_info(product_url)
+            print(f"Ürün adı: {product_name}")
+            print(f"Ürün fiyatı: {product_price}")
+            print(f"Ürün 5 Üzerinden Puanı: {product_star}")
+            print(f"Ürünün değerlendirme sayısı: {product_review}")
         elif choice == "2":
-            check_price(product_url)
+            product_price, product_price_tag = check_price(product_url)
         elif choice == "3":
-            threshold_str = input("İndirim eşiği değerini girin (%): ")
-            threshold = float(threshold_str.rstrip('%'))  # Yüzde işaretini kaldırın ve ardından dönüştürün
-            discount_alert(product_url, threshold)
+            if product_price_tag is not None:  # product_price_tag değeri None değilse discount_alert fonksiyonunu çağırın
+                threshold_str = input("İndirim eşiği değerini girin (%): ")
+                threshold = float(threshold_str.rstrip('%'))  # Yüzde işaretini kaldırın ve ardından dönüştürün
+                discount_alert(product_url, product_price_tag, threshold)
+            else:
+                print("Önce ürün fiyatını kontrol etmelisiniz!")
         elif choice == "4":
-            compare_product(product_url)
+            if product_price is not None:  # product_price değeri None değilse compare_product fonksiyonunu çağırın
+                compare_product(product_url, product_price)
+            else:
+                print("Önce ürün fiyatını kontrol etmelisiniz!")
         elif choice == "5":
             print("Programdan çıkılıyor...")
             break
         else:
             print("Geçersiz bir seçenek. Lütfen tekrar deneyin.")
-
 menu()
-
