@@ -17,8 +17,8 @@ document.addEventListener("DOMContentLoaded", function() {
                     datasets: [{
                         label: 'Product Price (₺)',
                         data: prices,
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
+                        borderColor: 'rgba(75, 192, 192, 2)',
+                        borderWidth: 2
                     }]
                 },
                 options: {
