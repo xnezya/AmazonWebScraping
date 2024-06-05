@@ -6,7 +6,7 @@ import time
 import smtplib
 import pandas as pd
 
-product_url = 'https://www.amazon.com.tr/Kahve-D%C3%BCnyas%C4%B1-Bitter-Gofrik-24l%C3%BC/dp/B074PT2HZ8/ref=sr_1_5?__mk_tr_TR=%C3%85M%C3%85%C5%BD%C3%95%C3%91&sr=8-5'
+product_url = 'https://www.amazon.com.tr/%C3%9Clker-%C3%87ikolatal%C4%B1-Gofret-36Gr-Adet/dp/B08X6WYHP3/ref=sr_1_5?__mk_tr_TR=%C3%85M%C3%85%C5%BD%C3%95%C3%91&sr=8-5'
 headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 }
@@ -14,34 +14,44 @@ response = requests.get(product_url, headers=headers)
 soup = BeautifulSoup(response.content, 'html.parser')
 
 product_name = soup.find("span", attrs={"id": 'productTitle'}).text.strip()
-
 product_price_elem = soup.find("span", attrs={"class": 'a-price aok-align-center reinventPricePriceToPayMargin priceToPay'})
+product_star = soup.find("a", attrs={"class": 'a-popover-trigger a-declarative'}).find("span", attrs={"class": 'a-size-base a-color-base'}).text.strip()
+product_review = soup.find("span", attrs={"id": 'acrCustomerReviewText'}).text.strip()
+
 if product_price_elem:
     product_price = product_price_elem.text.strip()
 else:
     product_price = "Fiyat bilgisi bulunamadı."
 
-product_star = soup.find("a", attrs={"class": 'a-popover-trigger a-declarative'}).find("span", attrs={"class": 'a-size-base a-color-base'}).text.strip()
-
-product_review = soup.find("span", attrs={"id": 'acrCustomerReviewText'}).text.strip()
-
 def get_product_info(product_url):
     return product_name, product_price, product_star, product_review
 
 def check_price(product_url):
-    return product_price, product_price_elem 
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    }
+    response = requests.get(product_url, headers=headers)
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    product_price_elem = soup.find("span", attrs={"class": 'a-price aok-align-center reinventPricePriceToPayMargin priceToPay'})
+    
+    if product_price_elem:
+        product_price = product_price_elem.text.strip()
+    else:
+        product_price = "Fiyat bilgisi bulunamadı."
 
     header = ['Title','Price','Date']
     today = datetime.date.today()
     data = [product_name,product_price,today]
 
-    with open ('AmazonWebScraperDataset.csv','a+',newline="", encoding='UTF-8') as f:
+    with open (r'D:\School\fourth year second semester\Web Mining\Amazon Web Scraping\AmazonWebScraperDataset.csv', 'a+', newline="", encoding='UTF-8') as f:
         writer = csv.writer(f)
         writer.writerow(data)
     
-    df = pd.read_csv(r'D:\School\fourth year second semester\Web Mining\Web Mining Project\AmazonWebScraperDataset.csv')
+    df = pd.read_csv(r'D:\School\fourth year second semester\Web Mining\Amazon Web Scraping\AmazonWebScraperDataset.csv')
     print(df)
 
+    return product_price, None  # product_price döndürülüyor, ancak product_price_tag döndürülmüyor
 
 def discount_alert(product_url, product_price_elem, threshold):
     current_price_str = product_price.replace('₺', '').replace(',', '').replace('TL', '').strip()

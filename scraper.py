@@ -14,5 +14,5 @@ def csv_to_json(csv_file_path, json_file_path):
 
 # Verileri CSV'den JSON'a dönüştür
 csv_file_path = 'AmazonWebScraperDataset.csv'
-json_file_path = 'static/data.json'
+json_file_path = 'data.json'
 csv_to_json(csv_file_path, json_file_path)

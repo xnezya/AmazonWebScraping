@@ -15,5 +15,3 @@ This project aims to scrape product information from Amazon, track the price cha
 - Sends email alerts when a specified discount threshold is reached.
 - Compares the price with a similar product from another website.
 - Visualizes price changes over time using Chart.js.
-
-
